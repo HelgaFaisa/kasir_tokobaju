@@ -1,21 +1,45 @@
+<?php
+// Proses input form
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $id_supplier = isset($_POST['id_supplier']) ? htmlspecialchars($_POST['id_supplier']) : null;
+    $nama_supplier = htmlspecialchars($_POST['nama_supplier']);
+    $alamat = htmlspecialchars($_POST['alamat']);
+    $telepon = htmlspecialchars($_POST['telepon']);
+
+    try {
+        if ($id_supplier) {
+            // Update data
+            $sql = 'UPDATE supplier SET nama_supplier = ?, alamat = ?, telepon = ? WHERE id_supplier = ?';
+            $stmt = $config->prepare($sql);
+            $stmt->execute([$nama_supplier, $alamat, $telepon, $id_supplier]);
+            $message = 'Update Data Berhasil!';
+        } else {
+            // Insert data baru
+            $sql = 'INSERT INTO supplier (nama_supplier, alamat, telepon) VALUES (?, ?, ?)';
+            $stmt = $config->prepare($sql);
+            $stmt->execute([$nama_supplier, $alamat, $telepon]);
+            $message = 'Data berhasil disimpan!';
+        }
+
+        // Menampilkan notifikasi berhasil
+        echo '<div class="alert alert-success text-center"><p>' . $message . '</p></div>';
+    } catch (Exception $e) {
+        echo '<div class="alert alert-danger text-center"><p>Gagal menyimpan data: ' . htmlspecialchars($e->getMessage()) . '</p></div>';
+    }
+}
+
+// Cek status penghapusan
+if (isset($_GET['status'])) {
+    if ($_GET['status'] === 'success') {
+        echo '<div class="alert alert-success text-center"><p>Data berhasil dihapus!</p></div>';
+    } elseif ($_GET['status'] === 'error') {
+        echo '<div class="alert alert-danger text-center"><p>Gagal menghapus data!</p></div>';
+    }
+}
+
+?>
 <h4 style="text-align: center; color: #333;">Data Suppliers</h4>
 <br />
-<?php if (isset($_GET['success']) && $_GET['success'] == 'tambah-data') { ?>
-    <div class="alert alert-success text-center">
-        <p>Data berhasil disimpan!</p>
-    </div>
-<?php } ?>
-<?php if (isset($_GET['success-edit'])) { ?>
-    <div class="alert alert-success text-center">
-        <p>Update Data Berhasil!</p>
-    </div>
-<?php } ?>
-<?php if (isset($_GET['remove'])) { ?>
-    <div class="alert alert-danger text-center">
-        <p>Hapus Data Berhasil!</p>
-    </div>
-<?php } ?>
-
 <!-- Form Input Data Supplier -->
 <div class="container mt-4">
     <div class="card">
@@ -24,10 +48,9 @@
         </div>
         <div class="card-body">
             <?php 
-            // Inisialisasi variabel form input kosong secara default
             $nama_supplier = $alamat = $telepon = ''; 
             if (!empty($_GET['uid'])) {
-                $id_supplier = intval($_GET['uid']); // Pastikan integer untuk mencegah SQL injection
+                $id_supplier = intval($_GET['uid']);
                 $sql = "SELECT * FROM supplier WHERE id_supplier = ?";
                 $row = $config->prepare($sql);
                 $row->execute([$id_supplier]);
@@ -40,10 +63,8 @@
                 }
             }
             ?>
-            <!-- Form untuk input atau edit supplier -->
-            <form method="POST" action="<?= !empty($edit) ? 'fungsi/edit/edit.php?supplier=edit' : 'fungsi/tambah/tambah.php?supplier=tambah'; ?>">
+            <form method="POST" action="">
                 <?php if (!empty($edit)) { ?>
-                    <!-- Menambahkan input hidden untuk id_supplier -->
                     <input type="hidden" name="id_supplier" value="<?= $id_supplier; ?>">
                 <?php } ?>
                 <div class="form-group">
@@ -82,13 +103,11 @@
             </thead>
             <tbody>
                 <?php 
-                // Mengambil data supplier dari database
                 $sql = "SELECT * FROM supplier";
                 $stmt = $config->prepare($sql);
                 $stmt->execute();
                 $hasil = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                
-                // Menampilkan data ke tabel
+
                 $no = 1;
                 foreach ($hasil as $isi) {
                 ?>
@@ -98,12 +117,11 @@
                         <td><?= htmlspecialchars($isi['alamat']); ?></td>
                         <td><?= htmlspecialchars($isi['telepon']); ?></td>
                         <td class="text-center">
-                            <!-- Link edit dengan parameter uid=id_supplier -->
                             <a href="index.php?page=supplier&uid=<?= $isi['id_supplier']; ?>" class="btn btn-warning btn-sm">
                                 <i class="fa fa-edit"></i> Edit
                             </a>
                             <a href="fungsi/hapus/hapus.php?supplier=hapus&id=<?= $isi['id_supplier']; ?>" onclick="return confirm('Hapus Data Supplier?');" class="btn btn-danger btn-sm">
-                                <i class="fa fa-trash"></i> Hapus
+                            <i class="fa fa-trash"></i> Hapus
                             </a>
                         </td>
                     </tr>
